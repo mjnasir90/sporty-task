@@ -1,0 +1,159 @@
+package com.sporty.feed.infrastructure.web.controller;
+
+import com.sporty.feed.domain.event.BetSettledEvent;
+import com.sporty.feed.domain.event.DomainEvent;
+import com.sporty.feed.domain.event.OddsChangedEvent;
+import com.sporty.feed.domain.model.Outcome;
+import com.sporty.feed.infrastructure.messaging.LoggingDomainEventPublisher;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/**
+ * Integration tests for ProviderAlpha feed endpoint.
+ *
+ * Uses {@code @SpringBootTest} to load the full application context, verifying the
+ * complete chain: HTTP → controller → mapper → service → domain event publisher.
+ *
+ * Contrast with {@link ProviderAlphaControllerTest} which is a web-layer slice test
+ * that mocks the use case and only verifies controller + mapper behaviour.
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
+class ProviderAlphaIntegrationTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @MockitoSpyBean
+    LoggingDomainEventPublisher domainEventPublisher;
+
+    // ── ODDS_CHANGE ──────────────────────────────────────────────────────────
+
+    @Test
+    void oddsChange_fullChain_publishesOddsChangedEvent() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "msg_type": "odds_update",
+                                  "event_id": "ev123",
+                                  "values": {"1": 2.0, "X": 3.1, "2": 3.8}
+                                }
+                                """))
+                .andExpect(status().isAccepted());
+
+        var captor = ArgumentCaptor.forClass(DomainEvent.class);
+        verify(domainEventPublisher).publish(captor.capture());
+
+        assertThat(captor.getValue()).isInstanceOf(OddsChangedEvent.class);
+        OddsChangedEvent event = (OddsChangedEvent) captor.getValue();
+        assertThat(event.eventId()).isEqualTo("ev123");
+        assertThat(event.homeOdds()).isEqualTo(2.0);
+        assertThat(event.drawOdds()).isEqualTo(3.1);
+        assertThat(event.awayOdds()).isEqualTo(3.8);
+        assertThat(event.timestamp()).isNotNull();
+    }
+
+    // ── BET_SETTLEMENT ───────────────────────────────────────────────────────
+
+    @Test
+    void settlement_home_publishesBetSettledEventWithHomeOutcome() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"msg_type": "settlement", "event_id": "ev123", "outcome": "1"}
+                                """))
+                .andExpect(status().isAccepted());
+
+        var captor = ArgumentCaptor.forClass(DomainEvent.class);
+        verify(domainEventPublisher).publish(captor.capture());
+
+        assertThat(captor.getValue()).isInstanceOf(BetSettledEvent.class);
+        assertThat(((BetSettledEvent) captor.getValue()).outcome()).isEqualTo(Outcome.HOME);
+    }
+
+    @Test
+    void settlement_draw_publishesBetSettledEventWithDrawOutcome() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"msg_type": "settlement", "event_id": "ev123", "outcome": "X"}
+                                """))
+                .andExpect(status().isAccepted());
+
+        var captor = ArgumentCaptor.forClass(DomainEvent.class);
+        verify(domainEventPublisher).publish(captor.capture());
+
+        assertThat(((BetSettledEvent) captor.getValue()).outcome()).isEqualTo(Outcome.DRAW);
+    }
+
+    @Test
+    void settlement_away_publishesBetSettledEventWithAwayOutcome() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"msg_type": "settlement", "event_id": "ev123", "outcome": "2"}
+                                """))
+                .andExpect(status().isAccepted());
+
+        var captor = ArgumentCaptor.forClass(DomainEvent.class);
+        verify(domainEventPublisher).publish(captor.capture());
+
+        assertThat(((BetSettledEvent) captor.getValue()).outcome()).isEqualTo(Outcome.AWAY);
+    }
+
+    // ── Validation ───────────────────────────────────────────────────────────
+
+    @Test
+    void unknownMsgType_returns400() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"msg_type": "unknown", "event_id": "ev123"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    void missingEventId_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"msg_type": "odds_update", "values": {"1": 2.0, "X": 3.1, "2": 3.8}}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void missingValues_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"msg_type": "odds_update", "event_id": "ev123"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void invalidOutcome_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"msg_type": "settlement", "event_id": "ev123", "outcome": "Z"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+}
