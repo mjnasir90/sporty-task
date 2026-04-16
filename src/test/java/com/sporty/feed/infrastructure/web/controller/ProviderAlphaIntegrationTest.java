@@ -156,4 +156,107 @@ class ProviderAlphaIntegrationTest {
                                 """))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void negativeOdds_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "msg_type": "odds_update",
+                                  "event_id": "ev123",
+                                  "values": {"1": -1.0, "X": 3.1, "2": 3.8}
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void negativeOdds_returns400WithCorrectMessage() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "msg_type": "odds_update",
+                                  "event_id": "ev123",
+                                  "values": {"1": -1.0, "X": 3.1, "2": 3.8}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("values.home: home odds(1) must be positive"));
+    }
+
+    @Test
+    void blankEventId_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "msg_type": "odds_update",
+                                  "event_id": "",
+                                  "values": {"1": 2.0, "X": 3.1, "2": 3.8}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("eventId: event_id must not be blank"));
+    }
+
+    @Test
+    void whitespaceEventId_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "msg_type": "odds_update",
+                                  "event_id": "   ",
+                                  "values": {"1": 2.0, "X": 3.1, "2": 3.8}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("eventId: event_id must not be blank"));
+    }
+
+    @Test
+    void missingOddsKey_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "msg_type": "odds_update",
+                                  "event_id": "ev123",
+                                  "values": {"1": 2.0, "X": 3.1}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("values.away: away odds(2) must not be null"));
+    }
+
+    @Test
+    void integerEventId_returns400() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "msg_type": "odds_update",
+                                  "event_id": 123,
+                                  "values": {"1": 2.0, "X": 3.1, "2": 3.8}
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void unknownOddsKey_returns400WithFieldName() throws Exception {
+        mockMvc.perform(post("/provider-alpha/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "msg_type": "odds_update",
+                                  "event_id": "ev123",
+                                  "values": {"1": 2.0, "X": 3.1, "2": 3.8, "3": 4.0}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Unknown field '3' is not allowed"));
+    }
 }

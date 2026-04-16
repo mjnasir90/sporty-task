@@ -167,4 +167,93 @@ class ProviderBetaIntegrationTest {
                                 """))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void negativeOdds_returns400WithCorrectMessage() throws Exception {
+        mockMvc.perform(post("/provider-beta/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "ODDS",
+                                  "event_id": "ev456",
+                                  "odds": {"home": -1.0, "draw": 3.2, "away": 4.0}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("odds.home: home odds must be positive"));
+    }
+
+    @Test
+    void missingOddsKey_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-beta/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "ODDS",
+                                  "event_id": "ev456",
+                                  "odds": {"home": 1.95, "draw": 3.2}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("odds.away: away odds must not be null"));
+    }
+
+    @Test
+    void unknownOddsKey_returns400WithFieldName() throws Exception {
+        mockMvc.perform(post("/provider-beta/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "ODDS",
+                                  "event_id": "ev456",
+                                  "odds": {"home": 1.95, "draw": 3.2, "away": 4.0, "extra": 5.0}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Unknown field 'extra' is not allowed"));
+    }
+
+    @Test
+    void integerEventId_returns400() throws Exception {
+        mockMvc.perform(post("/provider-beta/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "ODDS",
+                                  "event_id": 123,
+                                  "odds": {"home": 1.95, "draw": 3.2, "away": 4.0}
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void blankEventId_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-beta/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "ODDS",
+                                  "event_id": "",
+                                  "odds": {"home": 1.95, "draw": 3.2, "away": 4.0}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("eventId: event_id must not be blank"));
+    }
+
+    @Test
+    void whitespaceEventId_returns400WithValidationError() throws Exception {
+        mockMvc.perform(post("/provider-beta/feed")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "ODDS",
+                                  "event_id": "   ",
+                                  "odds": {"home": 1.95, "draw": 3.2, "away": 4.0}
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("eventId: event_id must not be blank"));
+    }
 }

@@ -1,6 +1,8 @@
 spring:
   application:
     name: feed-processor
+  profiles:
+    active: local
   jackson:
     serialization:
       write-dates-as-timestamps: false   # Instant → ISO-8601 string
@@ -13,8 +15,4 @@ server:
 logging:
   level:
     com.sporty.feed: DEBUG
-
-# Swap to "kafka" when a KafkaMessagePublisher implementing MessagePublisher is added.
-messaging:
-  type: in-memory
     

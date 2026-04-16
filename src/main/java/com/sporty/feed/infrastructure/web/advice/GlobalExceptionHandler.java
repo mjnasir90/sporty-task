@@ -1,5 +1,6 @@
 package com.sporty.feed.infrastructure.web.advice;
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -20,6 +21,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadableMessage(HttpMessageNotReadableException ex) {
         log.warn("Unreadable feed message: {}", ex.getMessage());
+        if (ex.getCause() instanceof UnrecognizedPropertyException upe) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Unknown field '" + upe.getPropertyName() + "' is not allowed"));
+        }
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Unrecognized or malformed message format"));
     }
