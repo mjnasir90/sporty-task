@@ -1,7 +1,6 @@
 package com.sporty.feed.infrastructure.web.dto.alpha;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -20,7 +19,6 @@ import lombok.Getter;
  */
 @Getter
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "msg_type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = AlphaOddsChangeRequest.class, name = "odds_update"),

@@ -9,17 +9,17 @@ public enum Outcome {
             case "1" -> HOME;
             case "X" -> DRAW;
             case "2" -> AWAY;
-            default  -> throw new IllegalArgumentException("Unknown Alpha outcome: " + value);
+            default  -> throw new UnknownOutcomeException("Unknown Alpha outcome: " + value);
         };
     }
 
-    /** Beta encodes outcome as "home", "draw", "away". */
+    /** Beta encodes outcome as "home", "draw", "away" (exact case, per spec). */
     public static Outcome fromBeta(String value) {
-        return switch (value.toLowerCase()) {
+        return switch (value) {
             case "home" -> HOME;
             case "draw" -> DRAW;
             case "away" -> AWAY;
-            default     -> throw new IllegalArgumentException("Unknown Beta outcome: " + value);
+            default     -> throw new UnknownOutcomeException("Unknown Beta outcome: " + value);
         };
     }
 }
