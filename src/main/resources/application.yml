@@ -7,7 +7,7 @@ spring:
     serialization:
       write-dates-as-timestamps: false   # Instant → ISO-8601 string
     deserialization:
-      fail-on-unknown-properties: false
+      fail-on-unknown-properties: true
 
 server:
   port: 8080

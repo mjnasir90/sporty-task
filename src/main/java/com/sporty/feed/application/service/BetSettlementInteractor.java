@@ -28,7 +28,6 @@ public class BetSettlementInteractor implements BetSettlementUseCase {
                 command.eventId(), command.timestamp(), command.outcome());
         log.info("[QUEUE] BET_SETTLEMENT eventId={} outcome={} timestamp={}",
                 message.eventId(), message.outcome(), message.timestamp());
-        domainEventPublisher.publish(new BetSettledEvent(
-                command.eventId(), command.timestamp(), command.outcome()));
+        domainEventPublisher.publish(BetSettledEvent.from(message));
     }
 }

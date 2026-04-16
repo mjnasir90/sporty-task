@@ -22,9 +22,9 @@ class OutcomeTest {
     }
 
     @Test
-    void fromAlpha_unknownValue_throwsIllegalArgumentException() {
+    void fromAlpha_unknownValue_throwsUnknownOutcomeException() {
         assertThatThrownBy(() -> Outcome.fromAlpha("Z"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(UnknownOutcomeException.class)
                 .hasMessageContaining("Z");
     }
 
@@ -41,9 +41,20 @@ class OutcomeTest {
     }
 
     @Test
-    void fromBeta_unknownValue_throwsIllegalArgumentException() {
+    void fromBeta_unknownValue_throwsUnknownOutcomeException() {
         assertThatThrownBy(() -> Outcome.fromBeta("invalid"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(UnknownOutcomeException.class)
                 .hasMessageContaining("invalid");
+    }
+
+    @Test
+    void fromBeta_uppercaseValue_throwsUnknownOutcomeException() {
+        // Beta spec requires exact lowercase — "HOME", "DRAW", "AWAY" are not valid
+        assertThatThrownBy(() -> Outcome.fromBeta("HOME"))
+                .isInstanceOf(UnknownOutcomeException.class);
+        assertThatThrownBy(() -> Outcome.fromBeta("DRAW"))
+                .isInstanceOf(UnknownOutcomeException.class);
+        assertThatThrownBy(() -> Outcome.fromBeta("AWAY"))
+                .isInstanceOf(UnknownOutcomeException.class);
     }
 }
