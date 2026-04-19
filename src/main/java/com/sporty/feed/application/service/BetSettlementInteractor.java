@@ -4,17 +4,15 @@ import com.sporty.feed.application.gateway.DomainEventPublisher;
 import com.sporty.feed.application.usecase.BetSettlementUseCase;
 import com.sporty.feed.application.usecase.command.BetSettlementCommand;
 import com.sporty.feed.domain.event.BetSettledEvent;
-import com.sporty.feed.domain.model.BetSettlementMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.sporty.feed.domain.model.BetSettlement;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Interactor for the bet-settlement use case.
  * Pure Java — no framework dependencies. Wired as a @Bean in ApplicationConfig.
  */
+@Slf4j
 public class BetSettlementInteractor implements BetSettlementUseCase {
-
-    private static final Logger log = LoggerFactory.getLogger(BetSettlementInteractor.class);
 
     private final DomainEventPublisher domainEventPublisher;
 
@@ -24,10 +22,10 @@ public class BetSettlementInteractor implements BetSettlementUseCase {
 
     @Override
     public void execute(BetSettlementCommand command) {
-        BetSettlementMessage message = new BetSettlementMessage(
+        BetSettlement betSettlement = new BetSettlement(
                 command.eventId(), command.timestamp(), command.outcome());
         log.info("[QUEUE] BET_SETTLEMENT eventId={} outcome={} timestamp={}",
-                message.eventId(), message.outcome(), message.timestamp());
-        domainEventPublisher.publish(BetSettledEvent.from(message));
+                betSettlement.eventId(), betSettlement.outcome(), betSettlement.timestamp());
+        domainEventPublisher.publish(BetSettledEvent.from(betSettlement));
     }
 }

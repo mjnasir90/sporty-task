@@ -1,6 +1,6 @@
 package com.sporty.feed.domain.event;
 
-import com.sporty.feed.domain.model.OddsChangeMessage;
+import com.sporty.feed.domain.model.OddsChange;
 
 import java.time.Instant;
 
@@ -12,9 +12,9 @@ public record OddsChangedEvent(
         double awayOdds
 ) implements DomainEvent {
 
-    public static OddsChangedEvent from(OddsChangeMessage message) {
+    public static OddsChangedEvent from(OddsChange oddsChange) {
         return new OddsChangedEvent(
-                message.eventId(), message.timestamp(),
-                message.homeOdds(), message.drawOdds(), message.awayOdds());
+                oddsChange.eventId(), oddsChange.timestamp(),
+                oddsChange.homeOdds(), oddsChange.drawOdds(), oddsChange.awayOdds());
     }
 }
