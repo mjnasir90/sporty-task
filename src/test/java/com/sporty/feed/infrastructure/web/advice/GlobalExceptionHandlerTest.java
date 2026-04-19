@@ -39,7 +39,7 @@ class GlobalExceptionHandlerTest {
                                 {"msg_type": "unknown", "event_id": "ev1"}
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Unrecognized or malformed message format"));
+                .andExpect(jsonPath("$.message").value("Unknown type 'unknown'. Valid values: [odds_update, settlement]"));
     }
 
     @Test

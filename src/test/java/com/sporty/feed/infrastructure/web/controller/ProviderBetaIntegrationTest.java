@@ -121,7 +121,7 @@ class ProviderBetaIntegrationTest {
                                 {"type": "UNKNOWN", "event_id": "ev456"}
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").exists());
+                .andExpect(jsonPath("$.message").value("Unknown type 'UNKNOWN'. Valid values: [ODDS, SETTLEMENT]"));
     }
 
     @Test
@@ -131,7 +131,9 @@ class ProviderBetaIntegrationTest {
                         .content("""
                                 {"type": "ODDS", "odds": {"home": 1.95, "draw": 3.2, "away": 4.0}}
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0]").value("eventId: event_id must not be blank"));
     }
 
     @Test
@@ -141,7 +143,9 @@ class ProviderBetaIntegrationTest {
                         .content("""
                                 {"type": "ODDS", "event_id": "ev456"}
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0]").value("odds: odds must not be null"));
     }
 
     @Test
@@ -155,7 +159,9 @@ class ProviderBetaIntegrationTest {
                                   "odds": {"home": -1.0, "draw": 3.2, "away": 4.0}
                                 }
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0]").value("odds.home: home odds must be positive"));
     }
 
     @Test
@@ -165,7 +171,9 @@ class ProviderBetaIntegrationTest {
                         .content("""
                                 {"type": "SETTLEMENT", "event_id": "ev456", "result": "invalid"}
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0]").value("result: result must be one of: home, draw, away"));
     }
 
     @Test
@@ -224,7 +232,8 @@ class ProviderBetaIntegrationTest {
                                   "odds": {"home": 1.95, "draw": 3.2, "away": 4.0}
                                 }
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Unrecognized or malformed message format"));
     }
 
     @Test

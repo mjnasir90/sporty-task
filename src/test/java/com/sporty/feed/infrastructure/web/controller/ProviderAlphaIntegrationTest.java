@@ -134,7 +134,9 @@ class ProviderAlphaIntegrationTest {
                         .content("""
                                 {"msg_type": "odds_update", "values": {"1": 2.0, "X": 3.1, "2": 3.8}}
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0]").value("eventId: event_id must not be blank"));
     }
 
     @Test
@@ -144,7 +146,9 @@ class ProviderAlphaIntegrationTest {
                         .content("""
                                 {"msg_type": "odds_update", "event_id": "ev123"}
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0]").value("values: values must not be null"));
     }
 
     @Test
@@ -154,7 +158,9 @@ class ProviderAlphaIntegrationTest {
                         .content("""
                                 {"msg_type": "settlement", "event_id": "ev123", "outcome": "Z"}
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0]").value("outcome: outcome must be one of: 1, X, 2"));
     }
 
     @Test
@@ -242,7 +248,8 @@ class ProviderAlphaIntegrationTest {
                                   "values": {"1": 2.0, "X": 3.1, "2": 3.8}
                                 }
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Unrecognized or malformed message format"));
     }
 
     @Test

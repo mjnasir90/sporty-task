@@ -1,5 +1,6 @@
 package com.sporty.feed.infrastructure.web.advice;
 
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.sporty.feed.domain.model.UnknownOutcomeException;
 import lombok.extern.slf4j.Slf4j;
@@ -22,9 +23,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadableMessage(HttpMessageNotReadableException ex) {
         log.warn("Unreadable feed message: {}", ex.getMessage());
-        if (ex.getCause() instanceof UnrecognizedPropertyException upe) {
+        if (ex.getCause() instanceof InvalidTypeIdException ite) {
+            var subTypes = ite.getBaseType().getRawClass()
+                    .getAnnotation(com.fasterxml.jackson.annotation.JsonSubTypes.class);
+            var validNames = subTypes != null
+                    ? java.util.Arrays.stream(subTypes.value())
+                            .map(com.fasterxml.jackson.annotation.JsonSubTypes.Type::name)
+                            .toList()
+                    : List.of();
             return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Unknown field '" + upe.getPropertyName() + "' is not allowed"));
+                    .body(new ErrorResponse("Unknown type '" + ite.getTypeId() + "'. Valid values: " + validNames));
+        }
+        if (ex.getCause() instanceof UnrecognizedPropertyException upe) {
+            String msg = "Unknown field '" + upe.getPropertyName() + "' is not allowed";
+            return ResponseEntity.badRequest().body(new ErrorResponse(msg));
         }
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Unrecognized or malformed message format"));
