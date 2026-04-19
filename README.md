@@ -67,8 +67,8 @@ src/main/java/com/sporty/feed/
 │   │   └── BetSettledEvent.java           # Immutable record: eventId, timestamp, outcome
 │   └── model/
 │       ├── Outcome.java                   # Enum: HOME, DRAW, AWAY — with per-provider conversion
-│       ├── OddsChangeMessage.java         # Normalised odds message (record)
-│       └── BetSettlementMessage.java      # Normalised settlement message (record)
+│       ├── OddsChange.java                # Domain object: normalised odds change (record)
+│       └── BetSettlement.java             # Domain object: normalised bet settlement (record)
 │
 ├── application/
 │   ├── gateway/
@@ -77,7 +77,7 @@ src/main/java/com/sporty/feed/
 │   │   ├── OddsChangeUseCase.java         # Input boundary interface
 │   │   ├── BetSettlementUseCase.java      # Input boundary interface
 │   │   └── command/
-│   │       ├── FeedCommand.java           # Sealed base for all commands
+│   │       ├── BettingCommand.java        # Sealed base for all commands
 │   │       ├── OddsChangeCommand.java     # Record: eventId, timestamp, odds
 │   │       └── BetSettlementCommand.java  # Record: eventId, timestamp, outcome
 │   └── service/
@@ -100,8 +100,8 @@ src/main/java/com/sporty/feed/
         │   ├── alpha/                         # Provider Alpha DTOs + custom deserializer
         │   └── beta/                          # Provider Beta DTOs + custom deserializer
         └── mapper/
-            ├── AlphaFeedMapper.java           # Alpha DTO → FeedCommand
-            └── BetaFeedMapper.java            # Beta DTO → FeedCommand
+            ├── AlphaFeedMapper.java           # Alpha DTO → BettingCommand
+            └── BetaFeedMapper.java            # Beta DTO → BettingCommand
 ```
 
 ---
@@ -190,7 +190,13 @@ Valid results: `home`, `draw`, `away`.
 | `202 Accepted` | Message accepted and processed |
 | `400 Bad Request` | Validation failure, unknown type discriminator, or malformed JSON |
 
-**Error response shape:**
+**Error response shapes:**
+```json
+{ "message": "Unknown type 'UNKNOWN'. Valid values: [ODDS, SETTLEMENT]" }
+```
+```json
+{ "message": "Unknown field 'extra' is not allowed" }
+```
 ```json
 { "message": "Unrecognized or malformed message format" }
 ```
@@ -199,6 +205,20 @@ Valid results: `home`, `draw`, `away`.
 ```
 
 **Swagger UI** available at `http://localhost:8080/swagger-ui.html` when running locally.
+
+---
+
+### Health — `GET /actuator/health`
+
+```json
+{
+  "status": "UP",
+  "components": {
+    "diskSpace": { "status": "UP" },
+    "ping":      { "status": "UP" }
+  }
+}
+```
 
 ---
 
@@ -248,7 +268,7 @@ Database `RuntimeException`s (connection timeout, deadlock) need retry logic wit
 ### Observability
 - Micrometer metrics: ingestion count, error rate, processing latency per provider and message type
 - Structured logging (Logstash JSON encoder) with `event_id` and `msg_type` in MDC for trace correlation
-- Health endpoint (`/actuator/health`) with a Kafka liveness check in the production profile
+- `/actuator/health` is already exposed (Spring Boot Actuator included); extend with a Kafka liveness check in the production profile
 
 ### Security
 - Mutual TLS or API key authentication per provider endpoint (providers should not share a secret)
@@ -261,7 +281,7 @@ Currently validated only as non-blank. Production should enforce a UUID format: 
 
 ## Test Coverage
 
-59 tests across four layers:
+60 tests across four layers:
 
 ### Unit Tests
 | Test | What it covers |
@@ -319,7 +339,7 @@ docker build -t sporty-feed .
 docker run -p 8080:8080 sporty-feed
 ```
 
-The image uses a multi-stage build: dependencies are downloaded in a cached layer separate from source, so subsequent builds after a code-only change are fast.
+The image uses a multi-stage build with Spring Boot layered jar extraction. The fat jar is split into four Docker layers ordered by change frequency (`dependencies` → `spring-boot-loader` → `snapshot-dependencies` → `application`). A code-only change rebuilds only the `application` layer (~100 KB) — the `dependencies` layer (~18 MB) is always cached.
 
 ### With Maven
 
