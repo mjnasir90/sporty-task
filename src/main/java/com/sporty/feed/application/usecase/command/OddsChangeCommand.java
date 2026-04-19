@@ -8,4 +8,4 @@ public record OddsChangeCommand(
         double homeOdds,
         double drawOdds,
         double awayOdds
-) implements FeedCommand {}
+) implements BettingCommand {}

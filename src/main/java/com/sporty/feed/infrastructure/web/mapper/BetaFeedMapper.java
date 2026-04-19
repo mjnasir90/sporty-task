@@ -1,7 +1,7 @@
 package com.sporty.feed.infrastructure.web.mapper;
 
 import com.sporty.feed.application.usecase.command.BetSettlementCommand;
-import com.sporty.feed.application.usecase.command.FeedCommand;
+import com.sporty.feed.application.usecase.command.BettingCommand;
 import com.sporty.feed.application.usecase.command.OddsChangeCommand;
 import com.sporty.feed.domain.model.Outcome;
 import com.sporty.feed.infrastructure.web.dto.beta.BetaFeedRequest;
@@ -17,7 +17,7 @@ import java.time.Instant;
 @Component
 public class BetaFeedMapper {
 
-    public FeedCommand toCommand(BetaFeedRequest request) {
+    public BettingCommand toCommand(BetaFeedRequest request) {
         return switch (request) {
             case BetaOddsChangeRequest r -> new OddsChangeCommand(
                     r.getEventId(),

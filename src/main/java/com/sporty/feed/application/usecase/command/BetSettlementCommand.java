@@ -8,4 +8,4 @@ public record BetSettlementCommand(
         String eventId,
         Instant timestamp,
         Outcome outcome
-) implements FeedCommand {}
+) implements BettingCommand {}

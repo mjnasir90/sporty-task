@@ -1,7 +1,7 @@
 package com.sporty.feed.infrastructure.web.mapper;
 
 import com.sporty.feed.application.usecase.command.BetSettlementCommand;
-import com.sporty.feed.application.usecase.command.FeedCommand;
+import com.sporty.feed.application.usecase.command.BettingCommand;
 import com.sporty.feed.application.usecase.command.OddsChangeCommand;
 import com.sporty.feed.domain.model.Outcome;
 import com.sporty.feed.infrastructure.web.dto.alpha.AlphaFeedRequest;
@@ -20,7 +20,7 @@ import java.time.Instant;
 @Component
 public class AlphaFeedMapper {
 
-    public FeedCommand toCommand(AlphaFeedRequest request) {
+    public BettingCommand toCommand(AlphaFeedRequest request) {
         return switch (request) {
             case AlphaOddsChangeRequest r -> {
                 AlphaOdds odds = r.getValues();
