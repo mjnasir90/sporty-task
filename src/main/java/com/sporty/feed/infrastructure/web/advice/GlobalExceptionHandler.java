@@ -1,5 +1,6 @@
 package com.sporty.feed.infrastructure.web.advice;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.sporty.feed.domain.model.UnknownOutcomeException;
@@ -25,7 +26,7 @@ public class GlobalExceptionHandler {
         log.warn("Unreadable feed message: {}", ex.getMessage());
         if (ex.getCause() instanceof InvalidTypeIdException ite) {
             var subTypes = ite.getBaseType().getRawClass()
-                    .getAnnotation(com.fasterxml.jackson.annotation.JsonSubTypes.class);
+                    .getAnnotation(JsonSubTypes.class);
             var validNames = subTypes != null
                     ? java.util.Arrays.stream(subTypes.value())
                             .map(com.fasterxml.jackson.annotation.JsonSubTypes.Type::name)
